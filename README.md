@@ -11,6 +11,8 @@
 
 步骤3. 开启单节点训练（目前脚本仅支持单节点训练）
 
+步骤4. 上真机推理
+
 下面是每一步详细解释，跑通第一个简单的测试用例
 
 # 步骤0: 利用uv安装python环境
@@ -73,6 +75,12 @@ uv run scripts/compute_norm_stats.py --config-name test_case --max_frames 10000
 uv run scripts/train.py test_case
 ```
 跑实验请多查看TrainConfig
+
+# 步骤4: 上真机推理
+通过socket传输图片和推理结果，在[`scripts/x2robot_infer.py`](scripts/x2robot_infer.py)设定好ip和端口后，运行
+```bash
+uv run scripts/x2robot_infer.py  --policy.config=test_case --policy.dir=/x2robot/xinyuanfang/small_project/openpi/checkpoints/test_case/test_experiment_1/29999
+```
 
 # Original README Content
 

@@ -21,6 +21,7 @@ from openpi.training import config as _config
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
+
 def interpolates_actions(actions, num_actions=20, target_num_actions = 80, action_dim=7):
     # 假设 actions 是你的动作序列，shape 为 [num_actions, action_dim]
     # 其中，欧拉角为 actions[:, 3:6]
@@ -236,12 +237,6 @@ def main(args: Args) -> None:
         }
         action_pred = policy.infer(obs)
         action_pred = action_pred['actions']
-        prev_action = copy.deepcopy(action_pred)
-        # action_pred = unnormalize_action(action_pred, min_range, max_range)
-        
-        # print(action_pred[0])
-        # print(action_pred[-1])
-        # import pdb; pdb.set_trace()
 
         move_steps = action_pred.shape[0]
         action_pred = action_pred[:move_steps, ...]
