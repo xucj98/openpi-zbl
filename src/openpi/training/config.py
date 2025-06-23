@@ -18,6 +18,7 @@ import openpi.models.pi0 as pi0
 import openpi.models.pi0_fast as pi0_fast
 import openpi.models.tokenizer as _tokenizer
 import openpi.policies.aloha_policy as aloha_policy
+import openpi.policies.arx_policy as arx_policy
 import openpi.policies.droid_policy as droid_policy
 import openpi.policies.libero_policy as libero_policy
 import openpi.shared.download as _download
@@ -192,6 +193,48 @@ class SimpleDataConfig(DataConfigFactory):
             use_quantile_norm=model_config.model_type == ModelType.PI0_FAST,
         )
 
+
+@dataclasses.dataclass(frozen=True)
+class LeRobotX2robotDataConfig(DataConfigFactory):
+    default_prompt: str | None = None
+
+    # Action keys that will be used to read the action sequence from the dataset.
+    action_sequence_keys: Sequence[str] = ("action",)
+
+    repack_transforms: tyro.conf.Suppress[_transforms.Group] = dataclasses.field(
+        default=_transforms.Group(
+            inputs=[
+                _transforms.RepackTransform(
+                    {
+                        'images': {
+                            "left_wrist_view": "left_wrist_view",
+                            "face_view": "face_view",
+                            "right_wrist_view": "right_wrist_view",
+                        },
+                        "state": "state",
+                        "actions": "actions",
+                        "prompt": "task",
+                    }
+                )
+            ]
+        )
+    )
+
+    @override
+    def create(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig) -> DataConfig:
+        data_transforms = _transforms.Group(
+            inputs=[arx_policy.ArxInputs(action_dim=model_config.action_dim, model_type=model_config.model_type)],
+            outputs=[arx_policy.ArxOutputs()],
+        )
+
+        model_transforms = ModelTransformFactory(default_prompt=self.default_prompt)(model_config)
+
+        return dataclasses.replace(
+            self.create_base_config(assets_dirs),
+            repack_transforms=self.repack_transforms,
+            data_transforms=data_transforms,
+            model_transforms=model_transforms,
+        )
 
 @dataclasses.dataclass(frozen=True)
 class LeRobotAlohaDataConfig(DataConfigFactory):
@@ -634,7 +677,59 @@ _CONFIGS = [
         num_train_steps=10,
         wandb_enabled=False,
     ),
+    #### X2Robot configs ####
+    TrainConfig(
+        name="left_pi0",
+        batch_size=8,
+        save_interval=1000,
+        exp_name="debug_test_fasten_the_belt_test_6",
+        model=pi0.Pi0Config(action_horizon=20), # Pretrrained pi0 only supports action_dim = 32
+        weight_loader=weight_loaders.CheckpointWeightLoader("/x2robot/xinyuanfang/projects/.cache/openpi/openpi-assets/checkpoints/pi0_base/params"),
+        data=LeRobotX2robotDataConfig(
+            repo_id="fasten_the_belt_test",
+            base_config=DataConfig(
+            asset_id="fasten_the_belt_test",
+            ),
+            default_prompt="",
+        ),
+        # Below you can define other hyperparameters like the learning rate, number of training steps, etc.
+        # Check the base TrainConfig class for a full list of available hyperparameters.
+        num_train_steps=30_000,
+    ),
+    TrainConfig(
+        name="fasten_the_belt",
+        batch_size=8,
+        exp_name="fasten_the_belt_run_2",
+        model=pi0.Pi0Config(action_horizon=20), # Pretrrained pi0 only supports action_dim = 32
+        weight_loader=weight_loaders.CheckpointWeightLoader("/x2robot/xinyuanfang/projects/.cache/openpi/openpi-assets/checkpoints/pi0_base/params"),
+        data=LeRobotX2robotDataConfig(
+            repo_id="fasten_the_belt",
+            base_config=DataConfig(
+            asset_id="fasten_the_belt",
+            ),
+            default_prompt="",
+        ),
+        num_train_steps=30_000,
+    ),
+    TrainConfig(
+        name="test_case",
+        batch_size=8,
+        exp_name="test_experiment_1",
+        model=pi0.Pi0Config(action_horizon=20), # Pretrrained pi0 only supports action_dim = 32
+        weight_loader=weight_loaders.CheckpointWeightLoader("/x2robot/xinyuanfang/projects/.cache/openpi/openpi-assets/checkpoints/pi0_base/params"),
+        data=LeRobotX2robotDataConfig(
+            repo_id="test_case_1", # dataset repo
+            base_config=DataConfig(
+            asset_id="test_case_1",  # dataset repo
+            ),
+            default_prompt="",
+        ),
+        # Below you can define other hyperparameters like the learning rate, number of training steps, etc.
+        # Check the base TrainConfig class for a full list of available hyperparameters.
+        num_train_steps=30_000,
+    ),
 ]
+
 
 if len({config.name for config in _CONFIGS}) != len(_CONFIGS):
     raise ValueError("Config names must be unique.")

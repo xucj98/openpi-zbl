@@ -1,3 +1,8 @@
+import os
+os.environ["HF_LEROBOT_HOME"] = "/x2robot/xinyuanfang/small_project/.cache/hf_home"  # TODO:Set it to yours
+os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "0.9"
+
+
 import dataclasses
 import functools
 import logging
@@ -62,6 +67,7 @@ def init_wandb(config: _config.TrainConfig, *, resuming: bool, log_code: bool = 
             name=config.exp_name,
             config=dataclasses.asdict(config),
             project=config.project_name,
+            mode='offline'
         )
         (ckpt_dir / "wandb_id.txt").write_text(wandb.run.id)
 
@@ -199,7 +205,8 @@ def main(config: _config.TrainConfig):
             f"Batch size {config.batch_size} must be divisible by the number of devices {jax.device_count()}."
         )
 
-    jax.config.update("jax_compilation_cache_dir", str(epath.Path("~/.cache/jax").expanduser()))
+    jax.config.update("jax_compilation_cache_dir", str(epath.Path("/x2robot/xinyuanfang/small_project/.cache/jax").expanduser()))
+    # TODO: Change this to your own cache path
 
     rng = jax.random.key(config.seed)
     train_rng, init_rng = jax.random.split(rng)

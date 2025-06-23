@@ -1,5 +1,81 @@
 # openpi
 
+# X Square Robot Tutorial
+简单用例步骤：
+
+步骤0：学习uv，利用uv安装python环境（不要用conda）
+
+步骤1. 转换x2robot_dataset为LerobotDataset形式 
+
+步骤2. 根据LerobotDataset存下的数据计算state和action和normlization mean/var
+
+步骤3. 开启单节点训练（目前脚本仅支持单节点训练）
+
+下面是每一步详细解释，跑通第一个简单的测试用例
+
+# 步骤0: 利用uv安装python环境
+常规git clone，并安装uv（conda平替）
+```bash
+git clone --recurse-submodules git@github.com:ZBLRobot/openpi.git
+pip install uv
+```
+
+所有需要安装的包都在pyproject.toml里，uv sync会自动为你创建一个符合pyproject.toml虚拟环境在.venv，uv.lock会显示已经构建好的环境
+```bash
+GIT_LFS_SKIP_SMUDGE=1 uv sync
+GIT_LFS_SKIP_SMUDGE=1 uv pip install -e .
+```
+由于网络问题，uv sync可能会重复好几次
+
+有需要加本地第三方的库，就用这个指令自动添加到uv环境中
+
+```bash
+uv add --editable third_party_package
+```
+
+安装好之后，请运行test_torchcodec.py文件检查是否安装成功（常见错误）
+```bash
+uv run ./test_torchcodec.py
+```
+
+其他问题请提到issue，待添加
+
+# 步骤1: 转换dataset为LerobotDataset形式
+
+打开[`examples/x2robot/convert_x2robot_data_to_lerobot.py`](examples/x2robot/convert_x2robot_data_to_lerobot.py)
+
+这一步会利用torchcodec读取视频，将视频转换成图片，将图片一张一张塞入LerobotDataset，最后再转换成视频，较为浪费时间，后续需要优化，请优先跑通训练流程，
+
+首先，更改你的HF_LEROBOT_HOME地址，请改为一个存储空间较大的私有位置，所有数据集都会储存在这里，
+```bash
+os.environ["HF_LEROBOT_HOME"] = "/x2robot/xinyuanfang/small_project/.cache/hf_home" 
+```
+运行脚本
+```bash
+uv run examples/x2robot/convert_x2robot_data_to_lerobot.py
+```
+
+# 步骤2: 求state和action的norm stats
+
+根据数据算出state和action的mean以及variance，用于后续normalize/unnormlize
+在运行脚本前，需要定义你的TrainConfig，请查看[`scr/openpi/training/config.py`](scr/openpi/training/config.py)的末尾TrainConfig示例
+TrainConfig定义了所有训练相关的变量，请仔细阅读
+
+```bash
+uv run scripts/compute_norm_stats.py --config-name test_case --max_frames 10000
+```
+计算完请检查生成的norm_stats.json是否符合数量级
+
+# 步骤3: 启动训练
+
+根据你的机器，提交训练脚本[`debug.sh`](debug.sh)或以下简单版本
+```bash
+uv run scripts/train.py test_case
+```
+跑实验请多查看TrainConfig
+
+# Original README Content
+
 openpi holds open-source models and packages for robotics, published by the [Physical Intelligence team](https://www.physicalintelligence.company/).
 
 Currently, this repo contains two types of models:

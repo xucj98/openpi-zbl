@@ -4,6 +4,10 @@ This script is used to compute the normalization statistics for a given config. 
 will compute the mean and standard deviation of the data in the dataset and save it
 to the config assets directory.
 """
+import os
+os.environ["HF_LEROBOT_HOME"] = "/x2robot/xinyuanfang/small_project/.cache/hf_home"  # Set it to yours
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Only use the first GPU
+# NOTE: You need to make sure ffmpeg is properly installed, test_file: /x2robot/xinyuanfang/small_project/openpi/test_torchcodec.py
 
 import numpy as np
 import tqdm
@@ -13,7 +17,6 @@ import openpi.shared.normalize as normalize
 import openpi.training.config as _config
 import openpi.training.data_loader as _data_loader
 import openpi.transforms as transforms
-
 
 class RemoveStrings(transforms.DataTransformFn):
     def __call__(self, x: dict) -> dict:
@@ -51,7 +54,7 @@ def main(config_name: str, max_frames: int | None = None):
     data_loader = _data_loader.TorchDataLoader(
         dataset,
         local_batch_size=1,
-        num_workers=8,
+        num_workers=16,
         shuffle=shuffle,
         num_batches=num_frames,
     )
