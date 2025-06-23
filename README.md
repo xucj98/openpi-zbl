@@ -3,7 +3,7 @@
 # X Square Robot Tutorial
 简单用例步骤：
 
-步骤0：学习uv，利用uv安装python环境（不要用conda）
+步骤0. 学习uv，利用uv安装python环境（不要用conda）
 
 步骤1. 转换x2robot_dataset为LerobotDataset形式 
 
