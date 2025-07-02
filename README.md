@@ -77,11 +77,18 @@ uv run scripts/train.py test_case
 跑实验请多查看TrainConfig
 
 # 步骤4: 上真机推理
-通过socket传输图片和推理结果，在[`scripts/x2robot_infer.py`](scripts/x2robot_infer.py)设定好ip和端口后，运行
+通过socket传输图片和推理结果，在[`scripts/x2robot_infer.py`](scripts/x2robot_infer.py)设定好ip和端口后，运行（请将文件夹改成对应路径）
 ```bash
-uv run scripts/x2robot_infer.py  --policy.config=test_case --policy.dir=/x2robot/xinyuanfang/small_project/openpi/checkpoints/test_case/test_experiment_1/29999
+uv run scripts/x2robot_infer.py policy:checkpoint  --policy.config=test_case --policy.dir=./checkpoints/test_case/test_experiment_1/30000
 ```
 
+# 简单微调后的抓杯子模型
+请到百度网盘下载并放置到相应文件夹
+链接: https://pan.baidu.com/s/5UNVbsGu3Pxb1wWCQ5XbVdg?
+
+```bash
+uv run scripts/x2robot_infer.py policy:checkpoint --policy.config=test_case --policy.dir=./checkpoints/pickup_cup/30000/
+```
 # Original README Content
 
 openpi holds open-source models and packages for robotics, published by the [Physical Intelligence team](https://www.physicalintelligence.company/).
