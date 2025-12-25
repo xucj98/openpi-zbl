@@ -75,6 +75,10 @@ class Pi0Config(_model.BaseModelConfig):
     action_horizon: int = 50
     max_token_len: int = 48
 
+    # If true, mask out padding actions in the loss computation.
+    # This uses the action_loss_mask field from the Observation.
+    mask_padding_in_loss: bool = False
+
     @property
     @override
     def model_type(self) -> _model.ModelType:
@@ -144,6 +148,7 @@ class Pi0Config(_model.BaseModelConfig):
 class Pi0(_model.BaseModel):
     def __init__(self, config: Pi0Config, rngs: nnx.Rngs):
         super().__init__(config.action_dim, config.action_horizon, config.max_token_len)
+        self.mask_padding_in_loss = config.mask_padding_in_loss  # Store config for use in compute_loss
         paligemma_config = _gemma.get_config(config.paligemma_variant)
         action_expert_config = _gemma.get_config(config.action_expert_variant)
         # TODO: rewrite gemma in NNX. For now, use bridge.
@@ -263,7 +268,22 @@ class Pi0(_model.BaseModel):
         )
         v_t = self.action_out_proj(suffix_out[:, -self.action_horizon :])
 
-        return jnp.mean(jnp.square(v_t - u_t), axis=-1)
+        loss_per_dim = jnp.square(v_t - u_t)
+        
+        # Apply action loss mask if enabled
+        if self.mask_padding_in_loss:
+            # When mask_padding_in_loss is enabled, actions_is_pad must be provided by LeRobot
+            assert observation.actions_is_pad is not None, "actions_is_pad is required when mask_padding_in_loss=True"
+            
+            # Expand mask to match loss dimensions (batch, horizon, dim)
+            # actions_is_pad shape: (batch, horizon), True = padded, False = valid
+            # loss_per_dim shape: (batch, horizon, dim)
+            is_pad_expanded = observation.actions_is_pad[..., None]  # (batch, horizon, 1)
+            loss_per_dim = jnp.where(is_pad_expanded, 0.0, loss_per_dim)  # Zero out padded actions
+        
+        return jnp.mean(loss_per_dim, axis=-1)
+
+
 
     @override
     def sample_actions(

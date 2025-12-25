@@ -213,6 +213,7 @@ class LeRobotX2robotDataConfig(DataConfigFactory):
                         },
                         "state": "state",
                         "actions": "actions",
+                        "actions_is_pad": "actions_is_pad",
                         "prompt": "task",
                     }
                 )
@@ -383,6 +384,12 @@ class TrainConfig:
     lr_schedule: _optimizer.LRScheduleConfig = dataclasses.field(default_factory=_optimizer.CosineDecaySchedule)
     optimizer: _optimizer.OptimizerConfig = dataclasses.field(default_factory=_optimizer.AdamW)
     ema_decay: float | None = 0.99
+
+    # If true, mask out padding actions in the loss computation (for episode boundary handling).
+    # When enabled, actions that correspond to padded data (from episode boundaries) will not
+    # contribute to the loss gradient. This is useful when using datasets where episode ends
+    # require padding to reach the action_horizon.
+    mask_padding_in_loss: bool = False
 
     # Specifies which weights should be frozen.
     freeze_filter: tyro.conf.Suppress[Filter] = dataclasses.field(default_factory=nnx.Nothing)

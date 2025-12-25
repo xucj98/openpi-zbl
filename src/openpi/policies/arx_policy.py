@@ -79,6 +79,8 @@ class ArxInputs(transforms.DataTransformFn):
             inputs["actions"] = transforms.pad_to_dim(data["actions"], self.action_dim)
         if "prompt" in data:
             inputs["prompt"] = data["prompt"]
+        if "actions_is_pad" in data:
+            inputs["actions_is_pad"] = data["actions_is_pad"]
 
 
         return inputs

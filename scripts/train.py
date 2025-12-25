@@ -205,6 +205,14 @@ def main(config: _config.TrainConfig):
             f"Batch size {config.batch_size} must be divisible by the number of devices {jax.device_count()}."
         )
 
+    # Transfer mask_padding_in_loss from TrainConfig to model config if the model supports it
+    if hasattr(config.model, 'mask_padding_in_loss') and config.mask_padding_in_loss:
+        # TrainConfig is frozen, so we need to replace the whole config
+        config = dataclasses.replace(
+            config,
+            model=dataclasses.replace(config.model, mask_padding_in_loss=config.mask_padding_in_loss)
+        )
+
     jax.config.update("jax_compilation_cache_dir", str(epath.Path("/x2robot/xinyuanfang/small_project/.cache/jax").expanduser()))
     # TODO: Change this to your own cache path
 
