@@ -779,6 +779,28 @@ _CONFIGS = [
         # Check the base TrainConfig class for a full list of available hyperparameters.
         num_train_steps=30_000,
     ),
+    TrainConfig(
+        name="microwave_1218_act80_lora",
+        exp_name="microwave_1218_act80_lora",
+        model=pi0.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora", action_horizon=80), # Pretrrained pi0 only supports action_dim = 32
+        weight_loader=weight_loaders.CheckpointWeightLoader("/root/.cache/openpi/openpi-assets/checkpoints/pi0_base/params"),
+        data=LeRobotX2robotDataConfig(
+            repo_id="microwave_1218", # dataset repo
+            base_config=DataConfig(
+            asset_id="microwave_1218",  # dataset repo
+            ),
+            default_prompt="",
+        ),
+        freeze_filter=pi0.Pi0Config(
+            paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"
+        ).get_freeze_filter(),
+        # Turn off EMA for LoRA finetuning.
+        ema_decay=None,
+        # Below you can define other hyperparameters like the learning rate, number of training steps, etc.
+        # Check the base TrainConfig class for a full list of available hyperparameters.
+        batch_size=8,
+        num_train_steps=30_000,
+    ),
 ]
 
 
