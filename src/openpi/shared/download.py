@@ -18,6 +18,7 @@ import fsspec
 import fsspec.generic
 import s3transfer.futures as s3_transfer_futures
 import tqdm_loggable.auto as tqdm
+import requests
 from types_boto3_s3.service_resource import ObjectSummary
 
 # Environment variable to control cache directory path, ~/.cache/openpi will be used by default.
@@ -124,8 +125,39 @@ def maybe_download(url: str, *, force_download: bool = False, **kwargs) -> pathl
 
 def _download_fsspec(url: str, local_path: pathlib.Path, **kwargs) -> None:
     """Download a file from a remote filesystem to the local cache, and return the local path."""
-    fs, _ = fsspec.core.url_to_fs(url, **kwargs)
-    info = fs.info(url)
+    # Determine proxy for fsspec/aiohttp usage.
+    # Priority (first found): explicit kwargs['proxy'] -> OPENPI_DOWNLOAD_PROXY -> HTTPS_PROXY -> HTTP_PROXY -> ALL_PROXY -> fallback to existing default
+    proxy = kwargs.get("proxy")
+    if not proxy:
+        proxy = (
+            os.getenv("OPENPI_DOWNLOAD_PROXY")
+            or os.getenv("HTTPS_PROXY")
+            or os.getenv("HTTP_PROXY")
+            or os.getenv("ALL_PROXY")
+        )
+    # Only set a proxy in kwargs when it's explicitly provided either via kwargs or
+    # environment variables. Do not fall back to a hard-coded proxy so the runtime
+    # environment's networking behavior is respected.
+    if proxy:
+        kwargs["proxy"] = proxy
+
+    # url_to_fs + info may try to make network requests using gcsfs/aiohttp.
+    # If that fails (for example when proxies are not applied correctly to aiohttp),
+    # fall back to a direct HTTPS download for public GCS objects
+    # (gs://bucket/path -> https://storage.googleapis.com/bucket/path) which relies
+    # on `requests` and will respect HTTP(S)_PROXY / OPENPI_DOWNLOAD_PROXY env vars.
+    try:
+        fs, _ = fsspec.core.url_to_fs(url, **kwargs)
+        info = fs.info(url)
+    except Exception:
+        # Only attempt the special-case fallback for GCS URLs.
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme == "gs":
+            logger.warning("fsspec/gcsfs failed to access %s — trying HTTPS fallback", url)
+            # Attempt single-file download via HTTPS. If it fails, re-raise original exception.
+            _download_gs_http(url, local_path)
+            return
+        raise
     if is_dir := (info["type"] == "directory"):  # noqa: SIM108
         total_size = fs.du(url)
     else:
@@ -138,6 +170,44 @@ def _download_fsspec(url: str, local_path: pathlib.Path, **kwargs) -> None:
             pbar.update(current_size - pbar.n)
             time.sleep(1)
         pbar.update(total_size - pbar.n)
+
+
+def _download_gs_http(url: str, local_path: pathlib.Path) -> None:
+    """Download a public Google Cloud Storage object using HTTPS.
+
+    Converts gs://bucket/path -> https://storage.googleapis.com/bucket/path and
+    uses requests (which respects environment proxy variables) to download.
+
+    This is a fallback path for when fsspec/gcsfs can't connect due to proxy/aiohttp
+    tooling not using the expected proxy configuration.
+    """
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme != "gs":
+        raise ValueError("_download_gs_http expects a gs:// URL")
+
+    bucket = parsed.netloc
+    obj_path = parsed.path.lstrip("/")
+    download_url = f"https://storage.googleapis.com/{bucket}/{obj_path}"
+
+    # Ensure destination parent exists
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+
+    logger.info("Attempting HTTPS download fallback for %s -> %s", url, download_url)
+
+    # Stream the request to file so we can show progress and not load whole content in memory.
+    with requests.get(download_url, stream=True, timeout=30) as r:
+        r.raise_for_status()
+        total_size = int(r.headers.get("Content-Length", 0))
+        with tqdm.tqdm(total=total_size, unit="iB", unit_scale=True, unit_divisor=1024) as pbar:
+            tmp = local_path.with_suffix(".partial")
+            with open(tmp, "wb") as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if not chunk:
+                        continue
+                    f.write(chunk)
+                    pbar.update(len(chunk))
+            shutil.move(tmp, local_path)
+            _ensure_permissions(local_path)
 
 
 def _download_boto3(
