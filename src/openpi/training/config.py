@@ -712,15 +712,66 @@ _CONFIGS = [
         num_train_steps=30_000,
     ),
     TrainConfig(
-        name="test_case",
+        name="microwave_1215_act40",
         batch_size=8,
-        exp_name="test_experiment_1",
-        model=pi0.Pi0Config(action_horizon=20), # Pretrrained pi0 only supports action_dim = 32
-        weight_loader=weight_loaders.CheckpointWeightLoader("/x2robot/xinyuanfang/projects/.cache/openpi/openpi-assets/checkpoints/pi0_base/params"),
+        exp_name="microwave_1215_act40",
+        model=pi0.Pi0Config(action_horizon=40), # Pretrrained pi0 only supports action_dim = 32
+        weight_loader=weight_loaders.CheckpointWeightLoader("/root/.cache/openpi/openpi-assets/checkpoints/pi0_base/params"),
         data=LeRobotX2robotDataConfig(
-            repo_id="test_case_1", # dataset repo
+            repo_id="microwave_1215", # dataset repo
             base_config=DataConfig(
-            asset_id="test_case_1",  # dataset repo
+            asset_id="microwave_1215",  # dataset repo
+            ),
+            default_prompt="",
+        ),
+        # Below you can define other hyperparameters like the learning rate, number of training steps, etc.
+        # Check the base TrainConfig class for a full list of available hyperparameters.
+        num_train_steps=30_000,
+    ),
+    TrainConfig(
+        name="microwave_1215_act80",
+        batch_size=8,
+        exp_name="microwave_1215_act80",
+        model=pi0.Pi0Config(action_horizon=80), # Pretrrained pi0 only supports action_dim = 32
+        weight_loader=weight_loaders.CheckpointWeightLoader("/root/.cache/openpi/openpi-assets/checkpoints/pi0_base/params"),
+        data=LeRobotX2robotDataConfig(
+            repo_id="microwave_1215", # dataset repo
+            base_config=DataConfig(
+            asset_id="microwave_1215",  # dataset repo
+            ),
+            default_prompt="",
+        ),
+        # Below you can define other hyperparameters like the learning rate, number of training steps, etc.
+        # Check the base TrainConfig class for a full list of available hyperparameters.
+        num_train_steps=30_000,
+    ),
+    TrainConfig(
+        name="microwave_1218_act40",
+        batch_size=8,
+        exp_name="microwave_1218_act40",
+        model=pi0.Pi0Config(action_horizon=40), # Pretrrained pi0 only supports action_dim = 32
+        weight_loader=weight_loaders.CheckpointWeightLoader("/root/.cache/openpi/openpi-assets/checkpoints/pi0_base/params"),
+        data=LeRobotX2robotDataConfig(
+            repo_id="microwave_1218", # dataset repo
+            base_config=DataConfig(
+            asset_id="microwave_1218",  # dataset repo
+            ),
+            default_prompt="",
+        ),
+        # Below you can define other hyperparameters like the learning rate, number of training steps, etc.
+        # Check the base TrainConfig class for a full list of available hyperparameters.
+        num_train_steps=30_000,
+    ),
+    TrainConfig(
+        name="microwave_1218_act80",
+        batch_size=8,
+        exp_name="microwave_1218_act80",
+        model=pi0.Pi0Config(action_horizon=80), # Pretrrained pi0 only supports action_dim = 32
+        weight_loader=weight_loaders.CheckpointWeightLoader("/root/.cache/openpi/openpi-assets/checkpoints/pi0_base/params"),
+        data=LeRobotX2robotDataConfig(
+            repo_id="microwave_1218", # dataset repo
+            base_config=DataConfig(
+            asset_id="microwave_1218",  # dataset repo
             ),
             default_prompt="",
         ),

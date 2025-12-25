@@ -1,5 +1,5 @@
 import os
-os.environ["HF_LEROBOT_HOME"] = "/x2robot/xinyuanfang/small_project/.cache/hf_home"  # TODO:Set it to yours
+os.environ["HF_LEROBOT_HOME"] = "/root/.cache/hf_home"  # TODO:Set it to yours
 os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "0.9"
 
 

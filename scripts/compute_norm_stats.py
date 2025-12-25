@@ -5,7 +5,7 @@ will compute the mean and standard deviation of the data in the dataset and save
 to the config assets directory.
 """
 import os
-os.environ["HF_LEROBOT_HOME"] = "/x2robot/xinyuanfang/small_project/.cache/hf_home"  # Set it to yours
+os.environ["HF_LEROBOT_HOME"] = "/root/.cache/hf_home"  # Set it to yours
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Only use the first GPU
 # NOTE: You need to make sure ffmpeg is properly installed, test_file: /x2robot/xinyuanfang/small_project/openpi/test_torchcodec.py
 

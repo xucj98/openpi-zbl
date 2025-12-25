@@ -2,7 +2,7 @@
 Xinyuan Implementation of porting x2robot data to lerobot format.
 """
 import os
-os.environ["HF_LEROBOT_HOME"] = "/x2robot/xinyuanfang/small_project/.cache/hf_home" 
+os.environ["HF_LEROBOT_HOME"] = "/root/.cache/hf_home" 
 # TODO: Please change this to your own cache path, dataset will be saved in this path and take up a lot of space
 # NOTE: You have to set it before any imports
 
@@ -23,11 +23,11 @@ import einops
 
 from openpi.shared.tools import process_action, decode_video_torchvision
 
-REPO_NAME = "test_case_1"  # TODO: Name of the output dataset, also used for the Hugging Face Hub: Change it to your own
+REPO_NAME = "microwave_1218"  # TODO: Name of the output dataset, also used for the Hugging Face Hub: Change it to your own
 RAW_DATASET_PATHS = [
     # '/x2robot/zhengwei/10055/20250529-day-fasten_the_belt',
     # '/x2robot/zhengwei/factory10026/20250529-day-fasten_the_belt',
-    '/x2robot/zhengwei/factory10026/20250530-day-fasten_the_belt',
+    '/root/microwave_1218',
     # '/x2robot/zhengwei/10055/20250530-day-fasten_the_belt',
     # '/x2robot/zhengwei/factory10026/20250606-day-fasten_the_belt',
     # '/x2robot/zhengwei/10055/20250606-day-fasten_the_belt',
@@ -166,8 +166,8 @@ def main(push_to_hub: bool = False):
             episode_num += 1
 
             # TODO: This is only used for test case, remove this after testing
-            if episode_num > 3:
-                break
+            #if episode_num > 3:
+            #    break
 
     # Consolidate the dataset, skip computing stats since we will do that later
     # dataset.consolidate(run_compute_stats=False)
